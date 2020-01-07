@@ -19,7 +19,7 @@ def new_coords(coords):
         px = 0
 
     coords = coords[1:] + [[px, py]]
-    print(coords)
+    # print(coords)
 
     return coords
 
@@ -54,11 +54,13 @@ class MainObject:
 
 pygame.init()
 size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
-screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+screen = pygame.display.set_mode((500, 500))
 clock = pygame.time.Clock()
 fps = 100
 
-step = 10
+step = 1
 
 main_object_color = pygame.Color('black')
 
