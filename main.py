@@ -1,20 +1,40 @@
 import os
+import sys
+
 import pygame
+
+
+def start_screen():
+    fon = pygame.transform.scale(load_image('cover.jpg'), size)
+    screen.blit(fon, (0, 0))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(fps)
 
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     image = pygame.image.load(fullname)
-    # image = image.convert_alpha()
+    image = image.convert_alpha()
 
     if colorkey is not None:
         if colorkey == -1:
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey)
     else:
-        # image = image.convert_alpha()
+        image = image.convert_alpha()
         pass
     return image
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
 
 
 def new_coords(coords):
@@ -69,14 +89,16 @@ class MainObject:
         self.len = len(self.move)
 
     def go(self):
-        if not self.move[0]:
+        try:
+            if not self.move[0]:
+                return
+        except IndexError:
             return
         self.len = len(self.move)
         self.move = new_coords(self.move)
 
     def erase(self):
         self.move = self.move[1:]
-        print(self.move)
 
     def append(self, coord):
         self.move.append(coord)
@@ -92,25 +114,28 @@ class MainObject:
 
 
 pygame.init()
-size = W, H = 889, 500
+
 # size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
-
+size = W, H = 889, 500
 screen = pygame.display.set_mode((W, H))
 
 fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
 
 clock = pygame.time.Clock()
-fps = 100
+fps = 60
 
 step = 1
+thickness = 6
 
 main_object_color = pygame.Color('#CD5555')
 
 circles = [Circle(100, 100, 20, False), Circle(180, 100, 20, False), Circle(180, 180, 20, False)]
 circles.extend([Circle(300, 300, 20, True),
                 Circle(380, 300, 20, True), Circle(380, 380, 20, True)])
+
+start_screen()
 
 running = True
 isMainObjectCreation = isGameLost = isGameWon = False
@@ -124,8 +149,7 @@ while running:
 
         if event.type == pygame.KEYUP and event.key == 27:
             screen = pygame.display.set_mode((889, 500))
-            W = 500
-            H = 889
+            size = W, H = 500, 889
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             main_object.clear()
@@ -135,7 +159,8 @@ while running:
                 i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            main_object.append(list(event.pos))
+            if isMainObjectCreation:
+                main_object.append(list(event.pos))
             isMainObjectCreation = False
             for i in circles:
                 i.defeated = False
@@ -158,17 +183,21 @@ while running:
         except:
             pass
         i.draw(screen)
+    try:
+        for i in range(0, len(main_object) - 1, step):
+            from_coord = main_object.move[i]
+            to_coord = main_object.move[i + 1]
+            if abs(from_coord[0] - to_coord[0]) > W // 2 or abs(from_coord[1] - to_coord[1]) > H:
+                continue
+            if from_coord[0] and to_coord[0]:
+                pygame.draw.line(screen, main_object_color,
+                                 from_coord, to_coord, thickness)
+    except IndexError:
+        pass
 
-    for i in range(0, len(main_object) - 1, step):
-        from_coord = main_object.move[i]
-        to_coord = main_object.move[i + 1]
-        if abs(from_coord[0] - to_coord[0]) > W // 2 or abs(from_coord[1] - to_coord[1]) > H:
-            continue
-        if from_coord[0] and to_coord[0]:
-            pygame.draw.line(screen, main_object_color,
-                             from_coord, to_coord, 4)
-
-    if any([_.defeated and _.isObstacle for _ in circles]):
+    if any([_.defeated for _ in circles]) and isMainObjectCreation:
+        isMainObjectCreation = False
+    elif any([_.defeated and _.isObstacle for _ in circles]):
         isGameLost = True
     elif all([_.defeated != _.isObstacle for _ in circles]):
         isGameWon = True
