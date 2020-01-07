@@ -2,8 +2,12 @@ import pygame
 
 
 def new_coords(coords):
-    x_0, y_0 = coords[0]
-    x_1, y_1 = coords[1]
+    if abs(coords[0][0] - coords[1][0]) >= H // 1.2 or abs(coords[0][1] - coords[1][1]) >= W // 1.2:
+        x_0, y_0 = coords[1]
+        x_1, y_1 = coords[2]
+    else:
+        x_0, y_0 = coords[0]
+        x_1, y_1 = coords[1]
     x_n, y_n = coords[-1]
     px = x_n + x_1 - x_0
     py = y_n + y_1 - y_0
@@ -15,11 +19,9 @@ def new_coords(coords):
         py = 0
     if coords[-1][1] < 0:
         py = H
-    if coords[1][0] == 0:
-        px = 0
 
     coords = coords[1:] + [[px, py]]
-    # print(coords)
+    print(coords)
 
     return coords
 
@@ -53,7 +55,8 @@ class MainObject:
 
 
 pygame.init()
-size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
+size = W, H = 500, 500
+# size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 screen = pygame.display.set_mode((500, 500))
@@ -98,6 +101,8 @@ while running:
     for i in range(0, len(main_object) - 1, step):
         from_coord = main_object.move[i]
         to_coord = main_object.move[i + 1]
+        if abs(from_coord[0] - to_coord[0]) > H // 2 or abs(from_coord[1] - to_coord[1]) > W:
+            continue
         if from_coord[0] and to_coord[0]:
             pygame.draw.line(screen, main_object_color,
                              from_coord, to_coord, 4)
