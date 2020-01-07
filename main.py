@@ -1,19 +1,19 @@
 import os
-
 import pygame
 
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     image = pygame.image.load(fullname)
-    image = image.convert_alpha()
+    # image = image.convert_alpha()
 
     if colorkey is not None:
         if colorkey == -1:
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey)
     else:
-        image = image.convert_alpha()
+        # image = image.convert_alpha()
+        pass
     return image
 
 
@@ -44,10 +44,10 @@ def new_coords(coords):
 
 class Circle:
     def __init__(self, x, y, r, isObstacle):
-        self.isObstacle = isObstacle
         self.x = x
         self.y = y
         self.r = r
+        self.isObstacle = isObstacle
         self.defeated = False
         self.color = pygame.Color('blue')
         self.color_def = pygame.Color('green')
@@ -96,9 +96,11 @@ size = W, H = 889, 500
 # size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
-# fon = pygame.transform.scale(load_image('fon.jpg'), (W, H))
 
 screen = pygame.display.set_mode((W, H))
+
+fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
+
 clock = pygame.time.Clock()
 fps = 100
 
@@ -107,15 +109,15 @@ step = 1
 main_object_color = pygame.Color('#CD5555')
 
 circles = [Circle(100, 100, 20, False), Circle(180, 100, 20, False), Circle(180, 180, 20, False)]
-circles.extend([Circle(200, 200, 20, True),
-                Circle(280, 200, 20, True), Circle(280, 280, 20, True)])
+circles.extend([Circle(300, 300, 20, True),
+                Circle(380, 300, 20, True), Circle(380, 380, 20, True)])
 
 running = True
 isMainObjectCreation = isGameLost = isGameWon = False
 main_object = MainObject()
 
 while running:
-    screen.fill((255, 255, 255))
+    screen.blit(fon, (0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -168,15 +170,19 @@ while running:
 
     if any([_.defeated and _.isObstacle for _ in circles]):
         isGameLost = True
-    elif all([_.defeated and _.defeated != _.isObstacle for _ in circles]):
+    elif all([_.defeated != _.isObstacle for _ in circles]):
         isGameWon = True
 
     if isGameLost:
         main_object.erase()
         if not main_object:
             isGameLost = False
+            print('-')
     elif isGameWon:
-        pass
+        main_object.erase()
+        if not main_object:
+            isGameWon = False
+            print('+')
     elif not isMainObjectCreation:
         main_object.go()
 
