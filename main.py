@@ -17,8 +17,8 @@ def start_screen():
         clock.tick(fps)
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+def load_image(name, way='data', colorkey=None):
+    fullname = os.path.join(way, name)
     image = pygame.image.load(fullname)
     image = image.convert_alpha()
 
@@ -30,6 +30,34 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
         pass
     return image
+
+
+def load_level(filename):
+    global level_map, objects
+    objects = []
+    filename = 'data/levels/' + filename + ('.txt' if not filename.endswith('.txt') else '')
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+    for j, line in enumerate(level_map):
+        for i, obj in enumerate(level_map[j]):
+            if obj == '#':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      True, 'mole.png'))
+            elif obj == 'a':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      False, 'apple.png'))
+            elif obj == 'c':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      False, 'carrot.png'))
+            elif obj == 'l':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      False, 'lemon.png'))
+            elif obj == 'r':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      False, 'radish.png'))
+            elif obj == 's':
+                objects.append(Object(all_sprites, cell_size * i, cell_size * j,
+                                      False, 'strawberry.png'))
 
 
 def terminate():
@@ -62,21 +90,21 @@ def new_coords(coords):
     return coords
 
 
-class Circle:
-    def __init__(self, x, y, r, isObstacle):
+class Object(pygame.sprite.Sprite):
+    def __init__(self, group, x, y, isObstacle, image_name, def_image_name=None):
+        super().__init__(group)
+        print(x, y)
         self.x = x
         self.y = y
-        self.r = r
         self.isObstacle = isObstacle
         self.defeated = False
-        self.color = pygame.Color('blue')
-        self.color_def = pygame.Color('green')
-
-    def draw(self, surf):
-        if self.defeated:
-            pygame.draw.circle(surf, self.color_def, (self.x, self.y), self.r)
-        else:
-            pygame.draw.circle(surf, self.color, (self.x, self.y), self.r)
+        self.image = pygame.transform.scale(load_image('characters/' + image_name),
+                                            (cell_size, cell_size))
+        self.mask = pygame.mask.from_surface(self.image)
+        # if not isObstacle:
+        #     self.def_image = load_image('data/characters/' + def_image_name)
+        self.rect = pygame.Rect(x - cell_size, y - cell_size, x, y)
+        print(self.rect)
 
 
 class MainObject:
@@ -128,12 +156,13 @@ fps = 60
 
 step = 1
 thickness = 6
+cell_size = 28
 
 main_object_color = pygame.Color('#CD5555')
 
-circles = [Circle(100, 100, 20, False), Circle(180, 100, 20, False), Circle(180, 180, 20, False)]
-circles.extend([Circle(300, 300, 20, True),
-                Circle(380, 300, 20, True), Circle(380, 380, 20, True)])
+all_sprites = pygame.sprite.Group()
+
+load_level('level1')
 
 start_screen()
 
@@ -142,7 +171,6 @@ isMainObjectCreation = isGameLost = isGameWon = False
 main_object = MainObject()
 
 while running:
-    screen.blit(fon, (0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -155,34 +183,33 @@ while running:
             main_object.clear()
             main_object.append(list(event.pos))
             isMainObjectCreation = True
-            for i in circles:
+            for i in objects:
                 i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if isMainObjectCreation:
                 main_object.append(list(event.pos))
             isMainObjectCreation = False
-            for i in circles:
+            for i in objects:
                 i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             main_object.clear()
             main_object.append(None)
-            for i in circles:
+            for i in objects:
                 i.defeated = False
 
         if event.type == pygame.MOUSEMOTION:
             if isMainObjectCreation:
                 main_object.append(list(event.pos))
 
-    for i in circles:
+    for i in objects:
         try:
             x1, y1 = main_object.move[-1]
-            if (i.x - x1) ** 2 + (i.y - y1) ** 2 <= i.r ** 2:
+            if (i.x - x1) ** 2 + (i.y - y1) ** 2 <= cell_size ** 2:
                 i.defeated = True
         except:
             pass
-        i.draw(screen)
     try:
         for i in range(0, len(main_object) - 1, step):
             from_coord = main_object.move[i]
@@ -195,11 +222,11 @@ while running:
     except IndexError:
         pass
 
-    if any([_.defeated for _ in circles]) and isMainObjectCreation:
+    if any([_.defeated for _ in objects]) and isMainObjectCreation:
         isMainObjectCreation = False
-    elif any([_.defeated and _.isObstacle for _ in circles]):
+    elif any([_.defeated and _.isObstacle for _ in objects]):
         isGameLost = True
-    elif all([_.defeated != _.isObstacle for _ in circles]):
+    elif all([_.defeated != _.isObstacle for _ in objects]):
         isGameWon = True
 
     if isGameLost:
@@ -219,5 +246,8 @@ while running:
 
     pygame.display.flip()
     pygame.display.set_caption("fps: " + str(clock.get_fps()))
+
+    screen.blit(fon, (0, 0))
+    all_sprites.draw(screen)
 
 pygame.quit()
