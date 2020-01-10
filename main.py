@@ -3,6 +3,14 @@ import sys
 
 import pygame
 
+mixer1 = pygame.mixer
+mixer2 = pygame.mixer
+
+
+def load_music():
+    mixer1.music.load('data/sounds/gameplay.mp3')
+    mixer1.music.play(-1)
+
 
 def start_screen():
     fon = pygame.transform.scale(load_image('cover.jpg'), size)
@@ -146,6 +154,7 @@ pygame.init()
 # size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
+load_music()
 size = W, H = 889, 500
 screen = pygame.display.set_mode((W, H))
 
@@ -181,11 +190,12 @@ while running:
             size = W, H = 500, 889
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            main_object.clear()
-            main_object.append(list(event.pos))
-            isMainObjectCreation = True
-            for i in objects:
-                i.defeated = False
+            if not isGameLost and not isGameWon:
+                main_object.clear()
+                main_object.append(list(event.pos))
+                isMainObjectCreation = True
+                for i in objects:
+                    i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if isMainObjectCreation:
@@ -209,6 +219,12 @@ while running:
             x1, y1 = main_object.move[-1]
             if (i.x - x1) ** 2 + (i.y - y1) ** 2 <= cell_size ** 2:
                 i.defeated = True
+                if i.isObstacle:
+                    effect = pygame.mixer.Sound('data/sounds/death.wav')
+                    effect.play()
+                else:
+                    effect = pygame.mixer.Sound('data/sounds/nom.wav')
+                    effect.play()
         except:
             pass
     try:
