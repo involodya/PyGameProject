@@ -11,16 +11,39 @@ def load_music():
     mixer1.music.load('data/sounds/gameplay.mp3')
     mixer1.music.play(-1)
 
+def start_game(velocity):
+    global grass_y
+    screen.fill(pygame.Color("#4d85d0"))
+    screen.blit(fon, (0, grass_y))
+    grass_y -= velocity * clock.tick() / 1000
+    pygame.display.flip()
+
+
 
 def start_screen():
-    fon = pygame.transform.scale(load_image('cover.jpg'), size)
-    screen.blit(fon, (0, 0))
+    fon1 = pygame.transform.scale(load_image('cover.jpg'), size)
+    fon2 = pygame.transform.scale(load_image('cover2.jpg'), size)
+    easter = False
+    screen.blit(fon1, (0, 0))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
+                try:
+                    if event.key == pygame.K_f:
+                        if easter:
+                            screen.blit(fon1, (0, 0))
+                            easter = False
+                        else:
+                            screen.blit(fon2, (0, 0))
+                            effect = pygame.mixer.Sound('data/sounds/egg.wav')
+                            effect.play()
+                            easter = True
+                    else:
+                        return
+                except:
+                    return
         pygame.display.flip()
         clock.tick(fps)
 
@@ -180,6 +203,7 @@ size = W, H = 889, 500
 screen = pygame.display.set_mode((W, H))
 
 fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
+grass_y = H + 1
 
 clock = pygame.time.Clock()
 fps = 60
@@ -195,6 +219,8 @@ all_sprites = pygame.sprite.Group()
 load_level('level1')
 
 start_screen()
+while grass_y > 0:
+    start_game(H // 2)
 
 running = True
 isMainObjectCreation = isGameLost = isGameWon = False
@@ -266,7 +292,7 @@ while running:
 
     if any([_.defeated for _ in objects]) and isMainObjectCreation:
         isMainObjectCreation = False
-    elif any([_.defeated and _.isObstacle for _ in objects]) and not isGameLost and main_object:
+    elif any([_.defeated and _.isObstacle for _ in objects]):
         isGameLost = True
     elif all([_.defeated != _.isObstacle for _ in objects]):
         isGameWon = True
