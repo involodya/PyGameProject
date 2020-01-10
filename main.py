@@ -14,13 +14,17 @@ def load_music():
 
 def start_screen():
     fon = pygame.transform.scale(load_image('cover.jpg'), size)
+    fon2 = pygame.transform.scale(load_image('cover2.jpg'), size)
     screen.blit(fon, (0, 0))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
+                if event.key == pygame.K_f:
+                    screen.blit(fon2, (0, 0))
+                else:
+                    return
         pygame.display.flip()
         clock.tick(fps)
 
