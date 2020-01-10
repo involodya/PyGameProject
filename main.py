@@ -14,17 +14,13 @@ def load_music():
 
 def start_screen():
     fon = pygame.transform.scale(load_image('cover.jpg'), size)
-    fon2 = pygame.transform.scale(load_image('cover2.jpg'), size)
     screen.blit(fon, (0, 0))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                if event.key == pygame.K_f:
-                    screen.blit(fon2, (0, 0))
-                else:
-                    return
+                return
         pygame.display.flip()
         clock.tick(fps)
 
@@ -115,18 +111,39 @@ class Object(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         # if not isObstacle:
         #     self.def_image = load_image('data/characters/' + def_image_name)
-        self.rect = pygame.Rect(x - cell_size, y - cell_size, x, y)
+        self.rect = pygame.Rect(x - cell_size // 2, y - cell_size // 2, x, y)
         print(self.rect)
 
 
-class MainObject:
-    def __init__(self, *move):
+class MainObject(pygame.sprite.Sprite):
+    def __init__(self, group, *move, image_name):
+        super().__init__(group)
         if type(move) is not list:
             move = [move]
         else:
             move = move[0]
         self.move = [_ for _ in move]
         self.len = len(self.move)
+
+        self.image = pygame.transform.scale(load_image('characters/' + image_name),
+                                            (cell_size, cell_size))
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = pygame.Rect(-cell_size * 100, -cell_size * 100, 0, 0)
+
+    def update(self, *args):
+        super().update(self, args)
+        # self.image = pygame.transform.flip(self.image, True, False)
+        try:
+            self.rect = pygame.Rect(self.move[-1][0] - cell_size // 2,
+                                    self.move[-1][1] - cell_size // 2,
+                                    self.move[-1][0],
+                                    self.move[-1][1])
+        except IndexError:
+            pass
+        if not isMainObjectCreation and not isGameLost and not isGameWon:
+            self.go()
+        elif isGameLost:
+            self.rect = pygame.Rect(-cell_size * 100, -cell_size * 100, 0, 0)
 
     def go(self):
         try:
@@ -168,11 +185,10 @@ clock = pygame.time.Clock()
 fps = 60
 
 step = 1
-thickness = 16
+thickness = 6
 cell_size = 28
 
-main_object_color = pygame.Color('#490700')
-
+main_object_color = pygame.Color('#a23b34')
 
 all_sprites = pygame.sprite.Group()
 
@@ -182,7 +198,7 @@ start_screen()
 
 running = True
 isMainObjectCreation = isGameLost = isGameWon = False
-main_object = MainObject()
+main_object = MainObject(all_sprites, image_name='snake.png')
 
 while running:
     for event in pygame.event.get():
@@ -240,16 +256,17 @@ while running:
             if from_coord[0] and to_coord[0]:
                 pygame.draw.line(screen, main_object_color,
                                  from_coord, to_coord, thickness)
-            if i == 0:
-                pygame.draw.circle(screen, main_object_color, from_coord, 8)
-            elif i == len(main_object) - 2:
-                pygame.draw.circle(screen, main_object_color, from_coord, 8)
+            # if i == 0:
+            #     pygame.draw.circle(screen, main_object_color, from_coord, 8)
+            # elif i == len(main_object) - 2:
+            #     pygame.draw.circle(screen, main_object_color, from_coord, 8)
+        all_sprites.draw(screen)
     except IndexError:
         pass
 
     if any([_.defeated for _ in objects]) and isMainObjectCreation:
         isMainObjectCreation = False
-    elif any([_.defeated and _.isObstacle for _ in objects]):
+    elif any([_.defeated and _.isObstacle for _ in objects]) and not isGameLost and main_object:
         isGameLost = True
     elif all([_.defeated != _.isObstacle for _ in objects]):
         isGameWon = True
@@ -264,8 +281,6 @@ while running:
         if not main_object:
             isGameWon = False
             print('+')
-    elif not isMainObjectCreation:
-        main_object.go()
 
     clock.tick(fps)
 
@@ -274,5 +289,6 @@ while running:
 
     screen.blit(fon, (0, 0))
     all_sprites.draw(screen)
+    all_sprites.update()
 
 pygame.quit()
