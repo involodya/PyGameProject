@@ -11,13 +11,13 @@ def load_music():
     mixer1.music.load('data/sounds/gameplay.mp3')
     mixer1.music.play(-1)
 
+
 def start_game(velocity):
     global grass_y
     screen.fill(pygame.Color("#4d85d0"))
     screen.blit(fon, (0, grass_y))
     grass_y -= velocity * clock.tick() / 1000
     pygame.display.flip()
-
 
 
 def start_screen():
@@ -73,22 +73,28 @@ def load_level(filename):
         for i, obj in enumerate(level_map[j]):
             if obj == '#':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      True, 'mole.png'))
+                                      True, 'mole.png',
+                                      def_image_name='mole_hungry.png'))
             elif obj == 'a':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      False, 'apple.png'))
+                                      False, 'apple.png',
+                                      def_image_name='apple_eaten.png'))
             elif obj == 'c':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      False, 'carrot.png'))
+                                      False, 'carrot.png',
+                                      def_image_name='carrot_eaten.png'))
             elif obj == 'l':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      False, 'lemon.png'))
+                                      False, 'lemon.png',
+                                      def_image_name='lemon_eaten.png'))
             elif obj == 'r':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      False, 'radish.png'))
+                                      False, 'radish.png',
+                                      def_image_name='radish_eaten.png'))
             elif obj == 's':
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
-                                      False, 'strawberry.png'))
+                                      False, 'strawberry.png',
+                                      def_image_name='strawberry_eaten.png'))
 
 
 def terminate():
@@ -97,45 +103,59 @@ def terminate():
 
 
 def new_coords(coords):
-    if abs(coords[0][0] - coords[1][0]) >= W // 1.5 or \
-            abs(coords[0][1] - coords[1][1]) >= H // 1.5:
-        x_0, y_0 = coords[1]
-        x_1, y_1 = coords[2]
-    else:
-        x_0, y_0 = coords[0]
-        x_1, y_1 = coords[1]
-    x_n, y_n = coords[-1]
-    px = x_n + x_1 - x_0
-    py = y_n + y_1 - y_0
-    if coords[-1][0] > W:
-        px = 0
-    if coords[-1][0] < 0:
-        px = W
-    if coords[-1][1] > H:
-        py = 0
-    if coords[-1][1] < 0:
-        py = H
+    try:
+        if abs(coords[0][0] - coords[1][0]) >= W // 1.5 or \
+                abs(coords[0][1] - coords[1][1]) >= H // 1.5:
+            x_0, y_0 = coords[1]
+            x_1, y_1 = coords[2]
+        else:
+            x_0, y_0 = coords[0]
+            x_1, y_1 = coords[1]
+        x_n, y_n = coords[-1]
+        px = x_n + x_1 - x_0
+        py = y_n + y_1 - y_0
+        if coords[-1][0] > W:
+            px = 0
+        if coords[-1][0] < 0:
+            px = W
+        if coords[-1][1] > H:
+            py = 0
+        if coords[-1][1] < 0:
+            py = H
 
-    coords = coords[1:] + [[px, py]]
+        coords = coords[1:] + [[px, py]]
 
-    return coords
+        return coords
+    except IndexError:
+        return coords
 
 
 class Object(pygame.sprite.Sprite):
     def __init__(self, group, x, y, isObstacle, image_name, def_image_name=None):
         super().__init__(group)
-        print(x, y)
+        # print(x, y)
         self.x = x
         self.y = y
         self.isObstacle = isObstacle
         self.defeated = False
+        self.image_name = image_name
+        self.def_image_name = def_image_name
         self.image = pygame.transform.scale(load_image('characters/' + image_name),
                                             (cell_size, cell_size))
         self.mask = pygame.mask.from_surface(self.image)
         # if not isObstacle:
         #     self.def_image = load_image('data/characters/' + def_image_name)
         self.rect = pygame.Rect(x - cell_size // 2, y - cell_size // 2, x, y)
-        print(self.rect)
+        # print(self.rect)
+
+    def update(self, *args):
+        super().update(self, args)
+        if self.defeated:
+            self.image = pygame.transform.scale(load_image('characters/' + self.def_image_name),
+                                                (cell_size, cell_size))
+        else:
+            self.image = pygame.transform.scale(load_image('characters/' + self.image_name),
+                                                (cell_size, cell_size))
 
 
 class MainObject(pygame.sprite.Sprite):
@@ -187,7 +207,10 @@ class MainObject(pygame.sprite.Sprite):
         self.move = []
 
     def __len__(self):
-        return len(self.move)
+        try:
+            return len(self.move)
+        except TypeError:
+            return 0
 
     def __str__(self):
         return str(self.move)
@@ -195,10 +218,11 @@ class MainObject(pygame.sprite.Sprite):
 
 pygame.init()
 
+load_music()
+
 # size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
-load_music()
 size = W, H = 889, 500
 screen = pygame.display.set_mode((W, H))
 
@@ -209,8 +233,8 @@ clock = pygame.time.Clock()
 fps = 60
 
 step = 1
-thickness = 6
 cell_size = 28
+thickness = int(cell_size / 4.67)
 
 main_object_color = pygame.Color('#a23b34')
 
@@ -263,7 +287,7 @@ while running:
     for i in objects:
         try:
             x1, y1 = main_object.move[-1]
-            if (i.x - x1) ** 2 + (i.y - y1) ** 2 <= cell_size ** 2:
+            if pygame.sprite.collide_mask(i, main_object):
                 i.defeated = True
                 if i.isObstacle:
                     effect = pygame.mixer.Sound('data/sounds/death.wav')
