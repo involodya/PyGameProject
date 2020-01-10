@@ -155,10 +155,11 @@ clock = pygame.time.Clock()
 fps = 60
 
 step = 1
-thickness = 6
+thickness = 16
 cell_size = 28
 
-main_object_color = pygame.Color('#CD5555')
+main_object_color = pygame.Color('#490700')
+
 
 all_sprites = pygame.sprite.Group()
 
@@ -219,6 +220,10 @@ while running:
             if from_coord[0] and to_coord[0]:
                 pygame.draw.line(screen, main_object_color,
                                  from_coord, to_coord, thickness)
+            if i == 0:
+                pygame.draw.circle(screen, main_object_color, from_coord, 8)
+            elif i == len(main_object) - 2:
+                pygame.draw.circle(screen, main_object_color, from_coord, 8)
     except IndexError:
         pass
 
