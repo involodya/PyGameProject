@@ -10,6 +10,11 @@ mixer1 = pygame.mixer
 mixer2 = pygame.mixer
 
 
+def save_level(level):
+    with open('data/save_level.txt', 'wb+') as file:
+        file.write(hash_level_number(level))
+
+
 def hash_level_number(level_number):
     password = bytes(str(level_number), encoding='utf8')
     salt = bcrypt.gensalt(rounds=12)
@@ -22,7 +27,7 @@ def unhash_level_number(level_number_hash):
     for i in range(1, MAX_LEVEL + 1):
         if bcrypt.checkpw(bytes(str(i), encoding='utf8'), level_number_hash):
             return i
-    return 0
+    return 1
 
 
 def load_music():
@@ -39,7 +44,13 @@ def start_game(velocity):
 
 
 def game_won():
-    pass
+    global isAllGameWon, gameover_sprite
+    isAllGameWon = True
+    gameover_sprite = pygame.sprite.Sprite()
+    gameover_sprite.image = load_image("gameover.png")
+    gameover_sprite.rect = gameover_sprite.image.get_rect()
+    gameover_sprite.rect.x, gameover_sprite.rect.y = -list(gameover_sprite.image.get_rect())[2], 0
+    all_sprites.add(gameover_sprite)
 
 
 def start_screen():
@@ -138,9 +149,7 @@ def delete_level():
 def next_level():
     global level
     level += 1
-    h = hash_level_number(level)
-    print(228, h)
-    print(322, unhash_level_number(h))
+    save_level(level)
     if level > MAX_LEVEL:
         game_won()
     else:
@@ -185,6 +194,7 @@ class Object(pygame.sprite.Sprite):
     def __init__(self, group, x, y, isObstacle, image_name, def_image_name=None):
         super().__init__(group)
         # print(x, y)
+        self.cs = mole_size if isObstacle else fruit_size
         self.x = x
         self.y = y
         self.isObstacle = isObstacle
@@ -192,21 +202,21 @@ class Object(pygame.sprite.Sprite):
         self.image_name = image_name
         self.def_image_name = def_image_name
         self.image = pygame.transform.scale(load_image('characters/' + image_name),
-                                            (cell_size, cell_size))
+                                            (self.cs, self.cs))
         self.mask = pygame.mask.from_surface(self.image)
         # if not isObstacle:
         #     self.def_image = load_image('data/characters/' + def_image_name)
-        self.rect = pygame.Rect(x - cell_size // 2, y - cell_size // 2, x, y)
+        self.rect = pygame.Rect(x - self.cs // 2, y - self.cs // 2, x, y)
         # print(self.rect)
 
     def update(self, *args):
         super().update(self, args)
         if self.defeated:
             self.image = pygame.transform.scale(load_image('characters/' + self.def_image_name),
-                                                (cell_size, cell_size))
+                                                (self.cs, self.cs))
         else:
             self.image = pygame.transform.scale(load_image('characters/' + self.image_name),
-                                                (cell_size, cell_size))
+                                                (self.cs, self.cs))
 
 
 class MainObject(pygame.sprite.Sprite):
@@ -275,7 +285,7 @@ load_music()
 # size = W, H = pygame.display.Info().current_w, pygame.display.Info().current_h
 # screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
-size = W, H = 889, 500
+size = W, H = 1200, 675
 screen = pygame.display.set_mode((W, H))
 
 fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
@@ -285,16 +295,23 @@ clock = pygame.time.Clock()
 fps = 60
 
 step = 1
-cell_size = 28
+cell_size = 20
+mole_size = 40
+fruit_size = 40
+
 thickness = int(cell_size / 4.67)
 
 main_object_color = pygame.Color('#a23b34')
 
 all_sprites = pygame.sprite.Group()
 
-level = 0
-next_level()
+try:
+    with open('data/save_level.txt', 'rb') as file:
+        level = unhash_level_number(file.read()) - 1
+except FileNotFoundError:
+    level = 1
 
+next_level()
 
 # Загрузка кастомного курсора
 
@@ -304,24 +321,18 @@ arrow_sprite.image = load_image("characters/arrow2.png")
 arrow_sprite.rect = arrow_sprite.image.get_rect()
 arrow_sprites.add(arrow_sprite)
 
-
 start_screen()
 while grass_y > 0:
     start_game(H // 2)
 
 running = True
-isMainObjectCreation = isGameLost = isGameWon = False
+isMainObjectCreation = isGameLost = isGameWon = isAllGameWon = False
 main_object = MainObject(all_sprites, image_name='snake.png')
-
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-        if event.type == pygame.KEYUP and event.key == 27:
-            screen = pygame.display.set_mode((889, 500))
-            size = W, H = 500, 889
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not isGameLost and not isGameWon:
@@ -399,6 +410,9 @@ while running:
             isGameWon = False
             print('+')
             next_level()
+    elif isAllGameWon:
+        if gameover_sprite.rect.x != 0:
+            gameover_sprite.rect.x += 10
 
     pygame.display.flip()
     pygame.display.set_caption("fps: " + str(clock.get_fps()))
