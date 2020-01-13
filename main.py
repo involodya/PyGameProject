@@ -1,10 +1,28 @@
 import os
 import sys
 
+import bcrypt
 import pygame
+
+MAX_LEVEL = 10
 
 mixer1 = pygame.mixer
 mixer2 = pygame.mixer
+
+
+def hash_level_number(level_number):
+    password = bytes(str(level_number), encoding='utf8')
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password, salt)
+
+    return hashed
+
+
+def unhash_level_number(level_number_hash):
+    for i in range(1, MAX_LEVEL + 1):
+        if bcrypt.checkpw(bytes(str(i), encoding='utf8'), level_number_hash):
+            return i
+    return 0
 
 
 def load_music():
@@ -18,6 +36,10 @@ def start_game(velocity):
     screen.blit(fon, (0, grass_y))
     grass_y -= velocity * clock.tick() / 1000
     pygame.display.flip()
+
+
+def game_won():
+    pass
 
 
 def start_screen():
@@ -103,6 +125,27 @@ def load_level(filename):
                 objects.append(Object(all_sprites, cell_size * i, cell_size * j,
                                       False, 'strawberry.png',
                                       def_image_name='strawberry_eaten.png'))
+
+
+def delete_level():
+    try:
+        for obj in objects:
+            obj.kill()
+    except NameError:
+        pass
+
+
+def next_level():
+    global level
+    level += 1
+    h = hash_level_number(level)
+    print(228, h)
+    print(322, unhash_level_number(h))
+    if level > MAX_LEVEL:
+        game_won()
+    else:
+        delete_level()
+        load_level(f'level{level}.txt')
 
 
 def terminate():
@@ -249,7 +292,8 @@ main_object_color = pygame.Color('#a23b34')
 
 all_sprites = pygame.sprite.Group()
 
-load_level('level1')
+level = 0
+next_level()
 
 
 # Загрузка кастомного курсора
@@ -295,10 +339,8 @@ while running:
                 i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            main_object.clear()
-            main_object.append(None)
-            for i in objects:
-                i.defeated = False
+            if not isMainObjectCreation:
+                next_level()
 
         if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
             x, y = event.pos
@@ -308,8 +350,6 @@ while running:
         if event.type == pygame.MOUSEMOTION:
             if isMainObjectCreation:
                 main_object.append(list(event.pos))
-
-
 
     for i in objects:
         try:
@@ -358,8 +398,7 @@ while running:
         if not main_object:
             isGameWon = False
             print('+')
-
-    clock.tick(fps)
+            next_level()
 
     pygame.display.flip()
     pygame.display.set_caption("fps: " + str(clock.get_fps()))
@@ -368,5 +407,7 @@ while running:
     all_sprites.draw(screen)
     arrow_sprites.draw(screen)
     all_sprites.update()
+
+    clock.tick(fps)
 
 pygame.quit()
