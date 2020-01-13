@@ -23,20 +23,25 @@ def start_game(velocity):
 def start_screen():
     fon1 = pygame.transform.scale(load_image('cover.jpg'), size)
     fon2 = pygame.transform.scale(load_image('cover2.jpg'), size)
+    fon = fon1
     easter = False
     screen.blit(fon1, (0, 0))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
+                x, y = event.pos
+                arrow_sprite.rect.x = x
+                arrow_sprite.rect.y = y
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 try:
                     if event.key == pygame.K_f:
                         if easter:
-                            screen.blit(fon1, (0, 0))
+                            fon = fon1
                             easter = False
                         else:
-                            screen.blit(fon2, (0, 0))
+                            fon = fon2
                             effect = pygame.mixer.Sound('data/sounds/egg.wav')
                             effect.play()
                             easter = True
@@ -44,6 +49,9 @@ def start_screen():
                         return
                 except:
                     return
+
+        screen.blit(fon, (0, 0))
+        arrow_sprites.draw(screen)
         pygame.display.flip()
         clock.tick(fps)
 
@@ -217,6 +225,7 @@ class MainObject(pygame.sprite.Sprite):
 
 
 pygame.init()
+pygame.mouse.set_visible(False)
 
 load_music()
 
@@ -242,6 +251,16 @@ all_sprites = pygame.sprite.Group()
 
 load_level('level1')
 
+
+# Загрузка кастомного курсора
+
+arrow_sprites = pygame.sprite.Group()
+arrow_sprite = pygame.sprite.Sprite()
+arrow_sprite.image = load_image("characters/arrow2.png")
+arrow_sprite.rect = arrow_sprite.image.get_rect()
+arrow_sprites.add(arrow_sprite)
+
+
 start_screen()
 while grass_y > 0:
     start_game(H // 2)
@@ -249,6 +268,7 @@ while grass_y > 0:
 running = True
 isMainObjectCreation = isGameLost = isGameWon = False
 main_object = MainObject(all_sprites, image_name='snake.png')
+
 
 while running:
     for event in pygame.event.get():
@@ -280,9 +300,16 @@ while running:
             for i in objects:
                 i.defeated = False
 
+        if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
+            x, y = event.pos
+            arrow_sprite.rect.x = x
+            arrow_sprite.rect.y = y
+
         if event.type == pygame.MOUSEMOTION:
             if isMainObjectCreation:
                 main_object.append(list(event.pos))
+
+
 
     for i in objects:
         try:
@@ -339,6 +366,7 @@ while running:
 
     screen.blit(fon, (0, 0))
     all_sprites.draw(screen)
+    arrow_sprites.draw(screen)
     all_sprites.update()
 
 pygame.quit()
