@@ -3,11 +3,18 @@ import sys
 
 import bcrypt
 import pygame
+import random
 
 MAX_LEVEL = 10
 
-mixer1 = pygame.mixer
-mixer2 = pygame.mixer
+
+def create_particles(position):
+    # количество создаваемых частиц
+    particle_count = 10
+    # возможные скорости
+    numbers = range(-30, 31)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
 
 
 def save_level(level):
@@ -31,8 +38,8 @@ def unhash_level_number(level_number_hash):
 
 
 def load_music():
-    mixer1.music.load('data/sounds/gameplay.mp3')
-    mixer1.music.play(-1)
+    pygame.mixer.music.load('data/sounds/gameplay.mp3')
+    pygame.mixer.music.play(-1)
 
 
 def start_game(velocity):
@@ -41,6 +48,10 @@ def start_game(velocity):
     screen.blit(fon, (0, grass_y))
     grass_y -= velocity * clock.tick() / 1000
     pygame.display.flip()
+
+
+def demo():
+    pass
 
 
 def game_won():
@@ -290,6 +301,40 @@ class MainObject(pygame.sprite.Sprite):
         return str(self.move)
 
 
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(all_sprites)
+        self.fire = [load_image("characters/apple_eaten.png"),
+                     load_image("characters/carrot_eaten.png"),
+                     load_image("characters/lemon_eaten.png"),
+                     load_image("characters/radish_eaten.png"),
+                     load_image("characters/strawberry_eaten.png")
+                     ]
+        for i in range(5):
+            for scale in (5, 10, 20):
+                self.fire.append(pygame.transform.scale(self.fire[i], (scale, scale)))
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # скорости огрызков
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # значение ускорения свободного падения
+        self.gravity = 5
+
+    # рисование огрызка
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if not self.rect.colliderect(screen_rect):
+            self.kill()
+
+
 pygame.init()
 pygame.mouse.set_visible(False)
 
@@ -300,6 +345,7 @@ load_music()
 
 size = W, H = 1200, 675
 screen = pygame.display.set_mode((W, H))
+screen_rect = (0, 0, W, H)
 
 fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
 grass_y = H + 1
@@ -360,7 +406,9 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if not isMainObjectCreation:
-                next_level()
+                for i in objects:
+                    if not i.isObstacle:
+                        i.defeated = True
 
         if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
             x, y = event.pos
@@ -370,6 +418,7 @@ while running:
         if event.type == pygame.MOUSEMOTION:
             if isMainObjectCreation:
                 main_object.append(list(event.pos))
+                print(main_object.move)
 
     for i in objects:
         try:
@@ -420,6 +469,9 @@ while running:
             isGameLostF = False
 
     elif isGameWon:
+        create_particles((600, 100))
+        effect = pygame.mixer.Sound('data/sounds/complete.wav')
+        effect.play()
         main_object.erase()
         if not main_object:
             isGameWon = False
