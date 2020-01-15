@@ -47,7 +47,7 @@ def game_won():
     global isAllGameWon, gameover_sprite
     isAllGameWon = True
     gameover_sprite = pygame.sprite.Sprite()
-    gameover_sprite.image = load_image("gameover.png")
+    gameover_sprite.image = pygame.transform.scale(load_image("gameover.png"), size)
     gameover_sprite.rect = gameover_sprite.image.get_rect()
     gameover_sprite.rect.x, gameover_sprite.rect.y = -list(gameover_sprite.image.get_rect())[2], 0
     all_sprites.add(gameover_sprite)
@@ -101,6 +101,7 @@ def load_image(name, way='data', colorkey=None):
     else:
         image = image.convert_alpha()
         pass
+
     return image
 
 
@@ -195,6 +196,7 @@ class Object(pygame.sprite.Sprite):
         super().__init__(group)
         # print(x, y)
         self.cs = mole_size if isObstacle else fruit_size
+        self.scs = mole_size if isObstacle else fruit_size
         self.x = x
         self.y = y
         self.isObstacle = isObstacle
@@ -207,14 +209,25 @@ class Object(pygame.sprite.Sprite):
         # if not isObstacle:
         #     self.def_image = load_image('data/characters/' + def_image_name)
         self.rect = pygame.Rect(x - self.cs // 2, y - self.cs // 2, x, y)
+        self.srect = pygame.Rect(x - self.cs // 2, y - self.cs // 2, x, y)
         # print(self.rect)
 
     def update(self, *args):
         super().update(self, args)
         if self.defeated:
+            if not self.isObstacle and self.cs < 200:
+                self.cs += step * 2
+                self.rect = pygame.Rect(self.rect[0] - step, self.rect[1] - step,
+                                        self.rect[2] + step, self.rect[3] + step)
+            elif self.cs >= 200:
+                self.rect = pygame.Rect(-W, -W,
+                                        -W, -W)
             self.image = pygame.transform.scale(load_image('characters/' + self.def_image_name),
                                                 (self.cs, self.cs))
+
         else:
+            self.cs = self.scs
+            self.rect = self.srect
             self.image = pygame.transform.scale(load_image('characters/' + self.image_name),
                                                 (self.cs, self.cs))
 
@@ -294,7 +307,7 @@ grass_y = H + 1
 clock = pygame.time.Clock()
 fps = 60
 
-step = 1
+step = 5
 cell_size = 20
 mole_size = 40
 fruit_size = 40
@@ -309,7 +322,7 @@ try:
     with open('data/save_level.txt', 'rb') as file:
         level = unhash_level_number(file.read()) - 1
 except FileNotFoundError:
-    level = 1
+    level = 0
 
 next_level()
 
@@ -326,7 +339,7 @@ while grass_y > 0:
     start_game(H // 2)
 
 running = True
-isMainObjectCreation = isGameLost = isGameWon = isAllGameWon = False
+isMainObjectCreation = isGameLost = isGameLostF = isGameWon = isAllGameWon = False
 main_object = MainObject(all_sprites, image_name='snake.png')
 
 while running:
@@ -343,11 +356,7 @@ while running:
                     i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            if isMainObjectCreation:
-                main_object.append(list(event.pos))
             isMainObjectCreation = False
-            for i in objects:
-                i.defeated = False
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if not isMainObjectCreation:
@@ -376,7 +385,7 @@ while running:
         except:
             pass
     try:
-        for i in range(0, len(main_object) - 1, step):
+        for i in range(0, len(main_object) - 1, 1):
             from_coord = main_object.move[i]
             to_coord = main_object.move[i + 1]
             if abs(from_coord[0] - to_coord[0]) > W // 2 or abs(from_coord[1] - to_coord[1]) > H:
@@ -395,7 +404,7 @@ while running:
     if any([_.defeated for _ in objects]) and isMainObjectCreation:
         isMainObjectCreation = False
     elif any([_.defeated and _.isObstacle for _ in objects]):
-        isGameLost = True
+        isGameLost = isGameLostF = True
     elif all([_.defeated != _.isObstacle for _ in objects]):
         isGameWon = True
 
@@ -403,7 +412,13 @@ while running:
         main_object.erase()
         if not main_object:
             isGameLost = False
-            print('-')
+            if isGameLostF:
+                for obj in objects:
+                    if obj.defeated and not obj.isObstacle:
+                        obj.defeated = False
+                print('-')
+            isGameLostF = False
+
     elif isGameWon:
         main_object.erase()
         if not main_object:
@@ -412,7 +427,7 @@ while running:
             next_level()
     elif isAllGameWon:
         if gameover_sprite.rect.x != 0:
-            gameover_sprite.rect.x += 10
+            gameover_sprite.rect.x += 1
 
     pygame.display.flip()
     pygame.display.set_caption("fps: " + str(clock.get_fps()))
