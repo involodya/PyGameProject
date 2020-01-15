@@ -22,12 +22,22 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
-def save_level(level):
+def save_level():
+    """
+    Сохраняет зашифрованную информацию о последнем пройденном уровне
+    :return: None
+    """
+    global max_level
     with open('data/save_level.txt', 'wb+') as file:
-        file.write(hash_level_number(level))
+        file.write(hash_level_number(max_level))
 
 
 def hash_level_number(level_number):
+    """
+    Шифрует (хэширует) номер уровня
+    :param level_number: Номер уровня
+    :return: Хэш уровня
+    """
     password = bytes(str(level_number), encoding='utf8')
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password, salt)
@@ -36,6 +46,11 @@ def hash_level_number(level_number):
 
 
 def unhash_level_number(level_number_hash):
+    """
+    Дешифрует номер уровня
+    :param level_number_hash: Хэш уровня
+    :return: Номер уровня
+    """
     for i in range(1, MAX_LEVEL + 1):
         if bcrypt.checkpw(bytes(str(i), encoding='utf8'), level_number_hash):
             return i
@@ -43,11 +58,20 @@ def unhash_level_number(level_number_hash):
 
 
 def load_music():
+    """
+    Подгружает и запускет фоновую музыку
+    :return: None
+    """
     pygame.mixer.music.load('data/sounds/gameplay.mp3')
     pygame.mixer.music.play(-1)
 
 
 def start_game(velocity):
+    """
+    Загрузка игры
+    :param velocity: Скорость
+    :return: None
+    """
     global grass_y
     screen.fill(pygame.Color("#4d85d0"))
     screen.blit(fon, (0, grass_y))
@@ -56,6 +80,10 @@ def start_game(velocity):
 
 
 def game_won():
+    """
+    Запуск окна победителя
+    :return: None
+    """
     global isAllGameWon, gameover_sprite
     isAllGameWon = True
     gameover_sprite = pygame.sprite.Sprite()
@@ -66,6 +94,10 @@ def game_won():
 
 
 def start_screen():
+    """
+    Экран запуска игры
+    :return: None
+    """
     fon1 = pygame.transform.scale(load_image('cover.jpg'), size)
     fon2 = pygame.transform.scale(load_image('cover2.jpg'), size)
     fon = fon1
@@ -92,9 +124,8 @@ def start_screen():
                             easter = True
                     else:
                         return
-                except:
+                except AttributeError:
                     return
-
         screen.blit(fon, (0, 0))
         arrow_sprites.draw(screen)
         pygame.display.flip()
@@ -102,6 +133,12 @@ def start_screen():
 
 
 def load_image(name, way='data', colorkey=None):
+    """
+    Функция загрузки изображения
+    :param name: Имя изображения
+    :param way: Путь до изображения
+    :return: Изображение
+    """
     fullname = os.path.join(way, name)
     image = pygame.image.load(fullname)
     image = image.convert_alpha()
@@ -118,6 +155,11 @@ def load_image(name, way='data', colorkey=None):
 
 
 def load_level(filename):
+    """
+    Загружает карту из текстового файла
+    :param filename: Имя файла с уровнем
+    :return:
+    """
     global level_map, objects
     objects = []
     filename = 'data/levels/' + filename + ('.txt' if not filename.endswith('.txt') else '')
@@ -152,6 +194,10 @@ def load_level(filename):
 
 
 def delete_level():
+    """
+    Офистка карты
+    :return: None
+    """
     try:
         for obj in objects:
             obj.kill()
@@ -160,12 +206,18 @@ def delete_level():
 
 
 def change_level(n):
-    global level
+    """
+    Смена уровня
+    :param n: Дельта смены уровня
+    :return: None
+    """
+    global level, max_level
     try:
         main_object.clear()
     except NameError:
         pass
     level += n
+    max_level = max(level, max_level)
     save_level(level)
     if level > MAX_LEVEL:
         game_won()
@@ -175,11 +227,20 @@ def change_level(n):
 
 
 def terminate():
+    """
+    Завершае работу программы
+    :return: None
+    """
     pygame.quit()
     sys.exit()
 
 
 def new_coords(coords):
+    """
+    Формирует новцю координату червя
+    :param coords: Список всех координат
+    :return: Новый список координат
+    """
     try:
         if abs(coords[0][0] - coords[1][0]) >= W // 1.5 or \
                 abs(coords[0][1] - coords[1][1]) >= H // 1.5:
@@ -369,6 +430,8 @@ try:
 except FileNotFoundError:
     level = 0
 
+max_level = level
+
 change_level(1)
 
 # Загрузка кастомного курсора
@@ -379,7 +442,6 @@ arrow_sprite.image = load_image("characters/arrow2.png")
 arrow_sprite.rect = arrow_sprite.image.get_rect()
 arrow_sprite.mask = pygame.mask.from_surface(arrow_sprite.image)
 arrow_sprites.add(arrow_sprite)
-
 
 arrow_sprites2 = pygame.sprite.Group()
 
