@@ -269,7 +269,19 @@ def new_coords(coords):
 
 
 class Object(pygame.sprite.Sprite):
+    """
+    Класс Кротов и фруктов
+    """
+
     def __init__(self, group, x, y, isObstacle, image_name, def_image_name=None):
+        """
+        :param group: Группа спрайта
+        :param x: Позиция спрайта по x
+        :param y: Позиция спрайта по y
+        :param isObstacle: Является ли спрайт кротом
+        :param image_name: Имя изображения спрайта
+        :param def_image_name: Имя изображения задетого спрайта
+        """
         super().__init__(group)
         self.cs = mole_size if isObstacle else fruit_size
         self.scs = mole_size if isObstacle else fruit_size
@@ -287,6 +299,9 @@ class Object(pygame.sprite.Sprite):
         self.alpha = 255
 
     def update(self, *args):
+        """
+        Обновление спрайта, увеличение при задевании
+        """
         super().update(self, args)
         if self.defeated:
             if not self.isObstacle and self.cs < 200:
@@ -307,7 +322,16 @@ class Object(pygame.sprite.Sprite):
 
 
 class MainObject(pygame.sprite.Sprite):
+    """
+    Класс червя
+    """
+
     def __init__(self, group, *move, image_name):
+        """
+        :param group: Группа спрайта
+        :param move: Список координат червя
+        :param image_name: Имя изображения головы спрайта
+        """
         super().__init__(group)
         if type(move) is not list:
             move = [move]
@@ -322,6 +346,10 @@ class MainObject(pygame.sprite.Sprite):
         self.rect = pygame.Rect(-cell_size * 100, -cell_size * 100, 0, 0)
 
     def update(self, *args):
+        """
+        Движение головы червя
+        :return: None
+        """
         super().update(self, args)
         try:
             self.rect = pygame.Rect(self.move[-1][0] - cell_size // 2,
@@ -336,6 +364,10 @@ class MainObject(pygame.sprite.Sprite):
             self.rect = pygame.Rect(-cell_size * 100, -cell_size * 100, 0, 0)
 
     def go(self):
+        """
+        Движение червя на 1 координату по траектории
+        :return: None
+        """
         try:
             if not self.move[0]:
                 return
@@ -345,26 +377,49 @@ class MainObject(pygame.sprite.Sprite):
         self.move = new_coords(self.move)
 
     def erase(self):
+        """
+        Посстепенное сокращение длины червя с конца
+        :return: None
+        """
         self.move = self.move[1:]
 
     def append(self, coord):
+        """
+        Увеличение длины червя за счет добавления новых координат
+        :param coord: Новые координаты
+        :return: None
+        """
         self.move.append(coord)
 
     def clear(self):
+        """
+        Полное уничтожение червя
+        :return:
+        """
         self.move = []
         self.rect = pygame.Rect(-cell_size * 100, -cell_size * 100, 0, 0)
 
     def __len__(self):
+        """
+        :return: Длина списка с координатами червя
+        """
         try:
             return len(self.move)
         except TypeError:
             return 0
 
     def __str__(self):
+        """
+        :return: Список с координатами червя
+        """
         return str(self.move)
 
 
 class Particle(pygame.sprite.Sprite):
+    """
+    Анимация пройденного уровня
+    """
+
     # сгенерируем частицы разного размера
 
     def __init__(self, pos, dx, dy):
@@ -398,178 +453,180 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 
-pygame.init()
-pygame.mouse.set_visible(False)
+if __name__ == '__main__':
+    pygame.init()
+    pygame.mouse.set_visible(False)
 
-load_music()
+    load_music()
 
-size = W, H = 1200, 675
-screen = pygame.display.set_mode((W, H))
-screen_rect = (0, 0, W, H)
+    size = W, H = 1200, 675
+    screen = pygame.display.set_mode((W, H))
+    screen_rect = (0, 0, W, H)
 
-fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
-grass_y = H + 1
+    fon = pygame.transform.scale(load_image('grass.jpg'), (W, H))
+    grass_y = H + 1
 
-clock = pygame.time.Clock()
-fps = 60
+    clock = pygame.time.Clock()
+    fps = 60
 
-step = 5
-cell_size = 20
-mole_size = 40
-fruit_size = 40
+    step = 5
+    cell_size = 20
+    mole_size = 40
+    fruit_size = 40
 
-thickness = int(cell_size / 4.67)
+    thickness = int(cell_size / 4.67)
 
-main_object_color = pygame.Color('#a23b34')
+    main_object_color = pygame.Color('#a23b34')
 
-all_sprites = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
 
-try:
-    with open('data/save_level.txt', 'rb') as file:
-        level = unhash_level_number(file.read()) - 1
-except FileNotFoundError:
-    level = 0
+    try:
+        with open('data/save_level.txt', 'rb') as file:
+            level = unhash_level_number(file.read()) - 1
+    except FileNotFoundError:
+        level = 0
 
-max_level = level
+    max_level = level
 
-change_level(1)
+    change_level(1)
 
-# Загрузка кастомного курсора
+    # Загрузка кастомного курсора
 
-arrow_sprites = pygame.sprite.Group()
-arrow_sprite = pygame.sprite.Sprite()
-arrow_sprite.image = load_image("characters/arrow2.png")
-arrow_sprite.rect = arrow_sprite.image.get_rect()
-arrow_sprite.mask = pygame.mask.from_surface(arrow_sprite.image)
-arrow_sprites.add(arrow_sprite)
+    arrow_sprites = pygame.sprite.Group()
+    arrow_sprite = pygame.sprite.Sprite()
+    arrow_sprite.image = load_image("characters/arrow2.png")
+    arrow_sprite.rect = arrow_sprite.image.get_rect()
+    arrow_sprite.mask = pygame.mask.from_surface(arrow_sprite.image)
+    arrow_sprites.add(arrow_sprite)
 
-arrow_sprites2 = pygame.sprite.Group()
+    arrow_sprites2 = pygame.sprite.Group()
 
-r_arrow_sprite = pygame.sprite.Sprite()
-r_arrow_sprite.image = load_image("wood_arr.png")
-r_arrow_sprite.rect = r_arrow_sprite.image.get_rect()
-r_arrow_sprite.mask = pygame.mask.from_surface(r_arrow_sprite.image)
-arrow_sprites2.add(r_arrow_sprite)
-r_arrow_sprite.rect.x = W - r_arrow_sprite.rect[2]
-r_arrow_sprite.rect.y = H - r_arrow_sprite.rect[3]
+    r_arrow_sprite = pygame.sprite.Sprite()
+    r_arrow_sprite.image = load_image("wood_arr.png")
+    r_arrow_sprite.rect = r_arrow_sprite.image.get_rect()
+    r_arrow_sprite.mask = pygame.mask.from_surface(r_arrow_sprite.image)
+    arrow_sprites2.add(r_arrow_sprite)
+    r_arrow_sprite.rect.x = W - r_arrow_sprite.rect[2]
+    r_arrow_sprite.rect.y = H - r_arrow_sprite.rect[3]
 
-l_arrow_sprite = pygame.sprite.Sprite()
-l_arrow_sprite.image = pygame.transform.flip(load_image("wood_arr.png"), True, False)
-l_arrow_sprite.rect = l_arrow_sprite.image.get_rect()
-l_arrow_sprite.mask = pygame.mask.from_surface(l_arrow_sprite.image)
-arrow_sprites2.add(l_arrow_sprite)
-l_arrow_sprite.rect.x = l_arrow_sprite.rect[0]
-l_arrow_sprite.rect.y = H - l_arrow_sprite.rect[3]
+    l_arrow_sprite = pygame.sprite.Sprite()
+    l_arrow_sprite.image = pygame.transform.flip(load_image("wood_arr.png"), True, False)
+    l_arrow_sprite.rect = l_arrow_sprite.image.get_rect()
+    l_arrow_sprite.mask = pygame.mask.from_surface(l_arrow_sprite.image)
+    arrow_sprites2.add(l_arrow_sprite)
+    l_arrow_sprite.rect.x = l_arrow_sprite.rect[0]
+    l_arrow_sprite.rect.y = H - l_arrow_sprite.rect[3]
 
-start_screen()
-while grass_y > 0:
-    start_game(H // 2)
+    start_screen()
+    while grass_y > 0:
+        start_game(H // 2)
 
-running = True
-isMainObjectCreation = isGameLost = isGameLostF = isGameWon = isAllGameWon = False
-main_object = MainObject(all_sprites, image_name='snake.png')
+    running = True
+    isMainObjectCreation = isGameLost = isGameLostF = isGameWon = isAllGameWon = False
+    main_object = MainObject(all_sprites, image_name='snake.png')
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if pygame.sprite.collide_mask(arrow_sprite, r_arrow_sprite):
-                change_level(1)
-            elif pygame.sprite.collide_mask(arrow_sprite, l_arrow_sprite):
-                change_level(-1)
-            elif not isAllGameWon:
-                main_object.clear()
-                main_object.append(list(event.pos))
-                isMainObjectCreation = True
-                for i in objects:
-                    i.defeated = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if pygame.sprite.collide_mask(arrow_sprite, r_arrow_sprite):
+                    change_level(1)
+                elif pygame.sprite.collide_mask(arrow_sprite, l_arrow_sprite):
+                    change_level(-1)
+                elif not isAllGameWon:
+                    main_object.clear()
+                    main_object.append(list(event.pos))
+                    isMainObjectCreation = True
+                    for i in objects:
+                        i.defeated = False
 
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            isMainObjectCreation = False
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                isMainObjectCreation = False
 
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-            if not isMainObjectCreation:
-                for i in objects:
-                    if not i.isObstacle:
-                        i.defeated = True
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                if not isMainObjectCreation:
+                    for i in objects:
+                        if not i.isObstacle:
+                            i.defeated = True
 
-        if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
-            x, y = event.pos
-            arrow_sprite.rect.x = x
-            arrow_sprite.rect.y = y
+            if event.type == pygame.MOUSEMOTION and pygame.mouse.get_focused():
+                x, y = event.pos
+                arrow_sprite.rect.x = x
+                arrow_sprite.rect.y = y
 
-        if event.type == pygame.MOUSEMOTION:
-            if isMainObjectCreation:
-                main_object.append(list(event.pos))
+            if event.type == pygame.MOUSEMOTION:
+                if isMainObjectCreation:
+                    main_object.append(list(event.pos))
 
-    for i in objects:
+        for i in objects:
+            try:
+                x1, y1 = main_object.move[-1]
+                if pygame.sprite.collide_mask(i, main_object):
+                    i.defeated = True
+                    if i.isObstacle:
+                        effect = pygame.mixer.Sound('data/sounds/death.wav')
+                        effect.play()
+                    else:
+                        effect = pygame.mixer.Sound('data/sounds/nom.wav')
+                        effect.play()
+            except ValueError:
+                pass
+            except IndexError:
+                pass
         try:
-            x1, y1 = main_object.move[-1]
-            if pygame.sprite.collide_mask(i, main_object):
-                i.defeated = True
-                if i.isObstacle:
-                    effect = pygame.mixer.Sound('data/sounds/death.wav')
-                    effect.play()
-                else:
-                    effect = pygame.mixer.Sound('data/sounds/nom.wav')
-                    effect.play()
-        except ValueError:
-            pass
+            for i in range(0, len(main_object) - 1, 1):
+                from_coord = main_object.move[i]
+                to_coord = main_object.move[i + 1]
+                if abs(from_coord[0] - to_coord[0]) > W // 2 or abs(
+                        from_coord[1] - to_coord[1]) > H:
+                    continue
+                if from_coord[0] and to_coord[0]:
+                    pygame.draw.line(screen, main_object_color,
+                                     from_coord, to_coord, thickness)
+            all_sprites.draw(screen)
         except IndexError:
             pass
-    try:
-        for i in range(0, len(main_object) - 1, 1):
-            from_coord = main_object.move[i]
-            to_coord = main_object.move[i + 1]
-            if abs(from_coord[0] - to_coord[0]) > W // 2 or abs(from_coord[1] - to_coord[1]) > H:
-                continue
-            if from_coord[0] and to_coord[0]:
-                pygame.draw.line(screen, main_object_color,
-                                 from_coord, to_coord, thickness)
+
+        if any([_.defeated for _ in objects]) and isMainObjectCreation:
+            isMainObjectCreation = False
+        elif any([_.defeated and _.isObstacle for _ in objects]):
+            isGameLost = isGameLostF = True
+        elif all([_.defeated != _.isObstacle for _ in objects]):
+            isGameWon = True
+
+        if isGameLost:
+            main_object.erase()
+            if not main_object:
+                isGameLost = False
+                if isGameLostF:
+                    for obj in objects:
+                        if obj.defeated and not obj.isObstacle:
+                            obj.defeated = False
+                isGameLostF = False
+
+        elif isGameWon:
+            create_particles((600, 100))
+            effect = pygame.mixer.Sound('data/sounds/complete.wav')
+            effect.play()
+            main_object.erase()
+            if not main_object:
+                isGameWon = False
+                print('+')
+                change_level(1)
+        elif isAllGameWon:
+            pass
+
+        pygame.display.flip()
+        pygame.display.set_caption("fps: " + str(clock.get_fps()))
+
+        screen.blit(fon, (0, 0))
         all_sprites.draw(screen)
-    except IndexError:
-        pass
+        arrow_sprites2.draw(screen)
+        arrow_sprites.draw(screen)
+        all_sprites.update()
 
-    if any([_.defeated for _ in objects]) and isMainObjectCreation:
-        isMainObjectCreation = False
-    elif any([_.defeated and _.isObstacle for _ in objects]):
-        isGameLost = isGameLostF = True
-    elif all([_.defeated != _.isObstacle for _ in objects]):
-        isGameWon = True
+        clock.tick(fps)
 
-    if isGameLost:
-        main_object.erase()
-        if not main_object:
-            isGameLost = False
-            if isGameLostF:
-                for obj in objects:
-                    if obj.defeated and not obj.isObstacle:
-                        obj.defeated = False
-            isGameLostF = False
-
-    elif isGameWon:
-        create_particles((600, 100))
-        effect = pygame.mixer.Sound('data/sounds/complete.wav')
-        effect.play()
-        main_object.erase()
-        if not main_object:
-            isGameWon = False
-            print('+')
-            change_level(1)
-    elif isAllGameWon:
-        pass
-
-    pygame.display.flip()
-    pygame.display.set_caption("fps: " + str(clock.get_fps()))
-
-    screen.blit(fon, (0, 0))
-    all_sprites.draw(screen)
-    arrow_sprites2.draw(screen)
-    arrow_sprites.draw(screen)
-    all_sprites.update()
-
-    clock.tick(fps)
-
-pygame.quit()
+    pygame.quit()
