@@ -9,18 +9,18 @@ import pygame
 MAX_LEVEL = 4
 
 
-def create_particles(position):
+def create_rain(position):
     """
     Запускает победный эффект (дождь из фруктов)
     :param position: позиция, из которой необходимо запустить эффект
     :return: None
     """
     # количество создаваемых частиц
-    particle_count = 10
+    drop_count = 10
     # возможные скорости
     numbers = range(-30, 31)
-    for _ in range(particle_count):
-        Particle(position, random.choice(numbers), random.choice(numbers))
+    for _ in range(drop_count):
+        Drop(position, random.choice(numbers), random.choice(numbers))
 
 
 def save_level():
@@ -420,12 +420,12 @@ class MainObject(pygame.sprite.Sprite):
         return str(self.move)
 
 
-class Particle(pygame.sprite.Sprite):
+class Drop(pygame.sprite.Sprite):
     """
     Анимация пройденного уровня
     """
 
-    # сгенерируем частицы разного размера
+    # сгенерируем капли разного размера
 
     def __init__(self, pos, dx, dy):
         super().__init__(all_sprites)
@@ -613,7 +613,7 @@ if __name__ == '__main__':
                 isGameLostF = False
 
         elif isGameWon:
-            create_particles((600, 100))
+            create_rain((600, 100))
             effect = pygame.mixer.Sound('data/sounds/complete.wav')
             effect.play()
             main_object.erase()
