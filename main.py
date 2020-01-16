@@ -6,7 +6,7 @@ import bcrypt
 import pygame
 
 #  Номер последнего уровня
-MAX_LEVEL = 4
+MAX_LEVEL = 5
 
 
 def create_rain(position):
