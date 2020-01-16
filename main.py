@@ -5,7 +5,8 @@ import sys
 import bcrypt
 import pygame
 
-MAX_LEVEL = 10
+#  Номер последнего уровня
+MAX_LEVEL = 4
 
 
 def create_particles(position):
@@ -91,6 +92,10 @@ def game_won():
     gameover_sprite.rect = gameover_sprite.image.get_rect()
     gameover_sprite.rect.x, gameover_sprite.rect.y = -list(gameover_sprite.image.get_rect())[2], 0
     all_sprites.add(gameover_sprite)
+
+    delete_level()
+    fon = pygame.transform.scale(load_image('gameover.png'), size)
+    screen.blit(fon, (0, 0))
 
 
 def start_screen():
@@ -216,9 +221,9 @@ def change_level(n):
         main_object.clear()
     except NameError:
         pass
-    level += n
+    level = max(1, level + n)
     max_level = max(level, max_level)
-    save_level(level)
+    save_level()
     if level > MAX_LEVEL:
         game_won()
     else:
@@ -381,7 +386,7 @@ class MainObject(pygame.sprite.Sprite):
         Посстепенное сокращение длины червя с конца
         :return: None
         """
-        self.move = self.move[1:]
+        self.move = self.move[max(1, len(self.move) // 5):]
 
     def append(self, coord):
         """
@@ -531,12 +536,13 @@ if __name__ == '__main__':
                 running = False
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                main_object.clear()
                 if pygame.sprite.collide_mask(arrow_sprite, r_arrow_sprite):
-                    change_level(1)
+                    if level + 1 <= max_level:
+                        change_level(1)
                 elif pygame.sprite.collide_mask(arrow_sprite, l_arrow_sprite):
                     change_level(-1)
                 elif not isAllGameWon:
-                    main_object.clear()
                     main_object.append(list(event.pos))
                     isMainObjectCreation = True
                     for i in objects:
@@ -613,7 +619,7 @@ if __name__ == '__main__':
             main_object.erase()
             if not main_object:
                 isGameWon = False
-                print('+')
+                # print('+')
                 change_level(1)
         elif isAllGameWon:
             pass
